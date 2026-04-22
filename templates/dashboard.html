@@ -990,9 +990,13 @@ async function renderPermisosPerfil() {
     .map(p => `<option value="${p.id}" ${String(p.id) === APP.permFilterPerfil ? 'selected' : ''}>${esc(p.nombre)}</option>`)
     .join('');
 
+  const p = perm();
+  const addBtn = p.agregar ? `<button class="btn btn-primary" onclick="openPermForm()">+ Agregar módulo</button>` : '';
+
   document.getElementById('moduleContent').innerHTML = `
     <div class="page-header">
       <div><div class="page-title">Permisos por Perfil</div><div class="page-subtitle">Asignación de permisos de módulos a perfiles.</div></div>
+      <div class="page-actions">${addBtn}</div>
     </div>
     <div class="card" style="margin-bottom:16px">
       <div class="card-body">
@@ -1010,29 +1014,31 @@ async function renderPermisosPerfil() {
 }
 
 async function loadPermRows(page = 1) {
-  APP.page = 1;
+  APP.page = page;
   const idPerfil = document.getElementById('selPermPerfil')?.value;
   if (!idPerfil) { document.getElementById('permTable').innerHTML = ''; return; }
 
-  const d = await apiFetch('GET', `/api/permisos-perfil?idPerfil=${idPerfil}&all=true`);
+  const d = await apiFetch('GET', `/api/permisos-perfil?idPerfil=${idPerfil}&page=${page}`);
   if (!d.ok) { toast('Error cargando permisos', 'error'); return; }
   APP.permRows = d.data || [];
-  APP.permTotalPages = 1;
-  renderPermTable(APP.permRows);
+  APP.permTotalPages = d.totalPages || 1;
+  APP.permPage = page;
+  renderPermTable(APP.permRows, page, APP.permTotalPages);
 }
 
-function renderPermTable(rows) {
+function renderPermTable(rows, page, totalPages) {
   const p = perm();
+  const globalOffset = (page - 1) * 5;
   const tbody = rows.length
     ? rows.map((row, i) => {
-        const idx = i + 1;
+        const idx = globalOffset + i + 1;
         const bits = ['bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'];
         const checks = bits.map(b =>
-          `<td><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''}></td>`
+          `<td style="text-align:center"><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''}></td>`
         ).join('');
         const saveBtn = p.editar ? `<button class="btn btn-success btn-sm" onclick="savePermRow(this,${row.id||0},${row.idPerfil},${row.idModulo})">Guardar</button>` : '';
         const detailBtn = p.detalle ? `<button class="btn btn-accent btn-sm" onclick="viewPermDetail(${i})">Ver</button>` : '';
-        const delBtn = p.eliminar && row.id ? `<button class="btn btn-danger btn-sm" onclick="deletePermRow(${row.id})">Eliminar</button>` : '';
+        const delBtn = p.eliminar && row.id > 0 ? `<button class="btn btn-danger btn-sm" onclick="deletePermRow(${row.id})">Eliminar</button>` : '';
         return `<tr>
           <td>${idx}</td>
           <td><strong>${esc(row.strNombreModulo)}</strong></td>
@@ -1040,21 +1046,37 @@ function renderPermTable(rows) {
           <td><div class="td-actions">${saveBtn}${detailBtn}${delBtn}</div></td>
         </tr>`;
       }).join('')
-    : `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Sin módulos</td></tr>`;
+    : `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Sin módulos — selecciona un perfil</td></tr>`;
+
+  const paginacion = renderPermPagination(page, totalPages);
 
   document.getElementById('permTable').innerHTML = `
     <div class="card">
-      <div class="card-header"><span class="card-title">Módulos y permisos — ${rows.length} módulo(s)</span></div>
+      <div class="card-header"><span class="card-title">Módulos y permisos</span></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Módulo</th><th>Agregar</th><th>Editar</th><th>Consulta</th><th>Eliminar</th><th>Detalle</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>Módulo</th><th style="text-align:center">Agregar</th><th style="text-align:center">Editar</th><th style="text-align:center">Consulta</th><th style="text-align:center">Eliminar</th><th style="text-align:center">Detalle</th><th>Acciones</th></tr></thead>
           <tbody>${tbody}</tbody>
         </table>
       </div>
+      ${paginacion ? `<div class="card-body" style="padding-top:0"><div class="pagination">${paginacion}</div></div>` : ''}
     </div>`;
 }
 
+function renderPermPagination(page, total) {
+  if (total <= 1) return '';
+  let html = `<span class="pag-info">Pág ${page}/${total}</span>`;
+  html += `<button onclick="loadPermRows(${page-1})" ${page<=1?'disabled':''}>‹</button>`;
+  const s = Math.max(1, page-1), e = Math.min(total, page+1);
+  for (let i = s; i <= e; i++)
+    html += `<button onclick="loadPermRows(${i})" class="${i===page?'active':''}">${i}</button>`;
+  html += `<button onclick="loadPermRows(${page+1})" ${page>=total?'disabled':''}>›</button>`;
+  return html;
+}
+
 async function savePermRow(btn, rowId, idPerfil, idModulo) {
+  btn.disabled = true;
+  btn.textContent = '...';
   const tr = btn.closest('tr');
   const body = {
     idPerfil, idModulo,
@@ -1067,9 +1089,9 @@ async function savePermRow(btn, rowId, idPerfil, idModulo) {
   const url = `/api/permisos-perfil/${rowId || 0}`;
   const method = rowId > 0 ? 'PUT' : 'POST';
   const d = await apiFetch(method, url, body);
-  if (d.ok) showStatus('¡Guardado!', 'Permisos actualizados.');
-  else toast(d.message || 'Error', 'error');
-  loadPermRows();
+  if (d.ok) showStatus('¡Guardado!', 'Permisos actualizados correctamente.');
+  else toast(d.message || 'Error al guardar', 'error');
+  loadPermRows(APP.permPage || APP.page || 1);
 }
 
 function viewPermDetail(idx) {
@@ -1080,10 +1102,10 @@ function viewPermDetail(idx) {
   const html = `<div class="detail-grid">
     ${keys.map(k => `<div class="field">
       <label>${esc(schema.detailLabels[k] || k)}</label>
-      <div class="detail-box">${k.startsWith('bit') ? boolLabel(!!row[k]) : esc(row[k] || '')}</div>
+      <div class="detail-box">${k.startsWith('bit') ? boolLabel(!!row[k]) : esc(String(row[k] || ''))}</div>
     </div>`).join('')}
   </div>
-  <div style="display:flex;justify-content:flex-end;margin-top:16px">
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
     <button class="btn btn-ghost" onclick="closeModal('detailModal')">Cerrar</button>
   </div>`;
   document.getElementById('detailModalTitle').textContent = 'Detalle de permiso';
@@ -1092,13 +1114,79 @@ function viewPermDetail(idx) {
 }
 
 function deletePermRow(id) {
-  showConfirm('Eliminar permiso', '¿Deseas eliminar este registro de permisos?', async () => {
+  showConfirm('Eliminar permiso', '¿Deseas eliminar este registro de permisos? Se quitarán todos los accesos del módulo para este perfil.', async () => {
     const d = await apiFetch('DELETE', `/api/permisos-perfil/${id}`);
     closeModal('confirmModal');
-    if (!d.ok) { toast(d.message || 'Error', 'error'); return; }
-    showStatus('Eliminado', 'El permiso fue eliminado.');
-    loadPermRows();
+    if (!d.ok) { toast(d.message || 'Error al eliminar', 'error'); return; }
+    showStatus('Eliminado', 'El permiso fue eliminado correctamente.');
+    loadPermRows(APP.permPage || 1);
   });
+}
+
+// ─── AGREGAR PERMISO (form modal) ─────────────────────────────────────────
+async function openPermForm() {
+  await ensureCatalogs();
+  const idPerfilActual = document.getElementById('selPermPerfil')?.value || '';
+  const modulos = (APP.catalogs?.modulos || [])
+    .map(m => `<option value="${m.id}">${esc(m.nombre)}</option>`).join('');
+  const perfiles = (APP.catalogs?.perfiles || [])
+    .map(p => `<option value="${p.id}" ${String(p.id) === idPerfilActual ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+
+  const html = `
+    <div class="form-grid">
+      <div class="field">
+        <label>Perfil <span style="color:var(--danger)">*</span></label>
+        <select id="permFormPerfil"><option value="">— Seleccione —</option>${perfiles}</select>
+      </div>
+      <div class="field">
+        <label>Módulo <span style="color:var(--danger)">*</span></label>
+        <select id="permFormModulo"><option value="">— Seleccione —</option>${modulos}</select>
+      </div>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin:16px 0">
+      ${['bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'].map(b => {
+        const label = {bitAgregar:'Agregar',bitEditar:'Editar',bitConsulta:'Consulta',bitEliminar:'Eliminar',bitDetalle:'Detalle'}[b];
+        return `<label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="permForm_${b}"> ${label}
+        </label>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+      <button class="btn btn-ghost" onclick="closeModal('detailModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitPermForm()">Guardar</button>
+    </div>`;
+
+  document.getElementById('detailModalTitle').textContent = 'Agregar permiso de módulo';
+  document.getElementById('detailModalBody').innerHTML = html;
+  openModal('detailModal');
+}
+
+async function submitPermForm() {
+  const idPerfil = document.getElementById('permFormPerfil')?.value;
+  const idModulo = document.getElementById('permFormModulo')?.value;
+  if (!idPerfil || !idModulo) { toast('Selecciona perfil y módulo', 'error'); return; }
+  const body = {
+    idPerfil, idModulo,
+    bitAgregar:  document.getElementById('permForm_bitAgregar').checked  ? '1' : '0',
+    bitEditar:   document.getElementById('permForm_bitEditar').checked   ? '1' : '0',
+    bitConsulta: document.getElementById('permForm_bitConsulta').checked ? '1' : '0',
+    bitEliminar: document.getElementById('permForm_bitEliminar').checked ? '1' : '0',
+    bitDetalle:  document.getElementById('permForm_bitDetalle').checked  ? '1' : '0',
+  };
+  const d = await apiFetch('POST', '/api/permisos-perfil/0', body);
+  closeModal('detailModal');
+  if (d.ok) {
+    showStatus('¡Guardado!', 'Permiso agregado correctamente.');
+    // Cambiar selector al perfil recién agregado si es diferente
+    const sel = document.getElementById('selPermPerfil');
+    if (sel && sel.value !== idPerfil) {
+      sel.value = idPerfil;
+      APP.permFilterPerfil = idPerfil;
+    }
+    loadPermRows(1);
+  } else {
+    toast(d.message || 'Error al guardar', 'error');
+  }
 }
 
 // ─── GALLERY ─────────────────────────────────────────────────────────────
