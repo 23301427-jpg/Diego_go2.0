@@ -736,6 +736,11 @@ async function loadList(page = 1) {
   if (schema.search && APP.search) url += `&search=${encodeURIComponent(APP.search)}`;
 
   const d = await apiFetch('GET', url);
+  if (!d.ok) {
+    toast(d.message || 'Sin acceso a este módulo', 'error');
+    renderList(schema, [], 1, 1);
+    return;
+  }
   renderList(schema, d.data || [], d.totalPages || 1, page);
 }
 

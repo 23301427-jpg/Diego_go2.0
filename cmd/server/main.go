@@ -77,16 +77,16 @@ func main() {
 	auth.HandleFunc("/api/static/{moduleKey}", handlers.GetStaticPermissions).Methods("GET")
 	auth.HandleFunc("/api/me/permissions", handlers.GetMyPermissions).Methods("GET")
 
-	// API Perfiles
-	auth.Handle("/api/perfiles", wrapAccess("perfil", "consulta", handlers.GetPerfiles)).Methods("GET")
-	auth.Handle("/api/perfiles/{id}", wrapAccess("perfil", "detalle", handlers.GetPerfilByID)).Methods("GET")
+	// API Perfiles — GET solo requiere tener algun permiso (any); escritura requiere permiso especifico
+	auth.Handle("/api/perfiles", wrapAccess("perfil", "", handlers.GetPerfiles)).Methods("GET")
+	auth.Handle("/api/perfiles/{id}", wrapAccess("perfil", "", handlers.GetPerfilByID)).Methods("GET")
 	auth.Handle("/api/perfiles", wrapAccess("perfil", "agregar", handlers.CreatePerfil)).Methods("POST")
 	auth.Handle("/api/perfiles/{id}", wrapAccess("perfil", "editar", handlers.UpdatePerfil)).Methods("PUT")
 	auth.Handle("/api/perfiles/{id}", wrapAccess("perfil", "eliminar", handlers.DeletePerfil)).Methods("DELETE")
 
-	// API Modulos
-	auth.Handle("/api/modulos", wrapAccess("modulo", "consulta", handlers.GetModulos)).Methods("GET")
-	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "detalle", handlers.GetModuloByID)).Methods("GET")
+	// API Modulos — GET solo requiere tener algun permiso (any); escritura requiere permiso especifico
+	auth.Handle("/api/modulos", wrapAccess("modulo", "", handlers.GetModulos)).Methods("GET")
+	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "", handlers.GetModuloByID)).Methods("GET")
 	auth.Handle("/api/modulos", wrapAccess("modulo", "agregar", handlers.CreateModulo)).Methods("POST")
 	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "editar", handlers.UpdateModulo)).Methods("PUT")
 	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "eliminar", handlers.DeleteModulo)).Methods("DELETE")
@@ -96,9 +96,9 @@ func main() {
 	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.UpsertPermisosPerfil).Methods("POST", "PUT")
 	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.DeletePermisosPerfil).Methods("DELETE")
 
-	// API Usuarios
-	auth.Handle("/api/usuarios", wrapAccess("usuario", "consulta", handlers.GetUsuarios)).Methods("GET")
-	auth.Handle("/api/usuarios/{id}", wrapAccess("usuario", "detalle", handlers.GetUsuarioByID)).Methods("GET")
+	// API Usuarios — GET solo requiere tener algun permiso (any); escritura requiere permiso especifico
+	auth.Handle("/api/usuarios", wrapAccess("usuario", "", handlers.GetUsuarios)).Methods("GET")
+	auth.Handle("/api/usuarios/{id}", wrapAccess("usuario", "", handlers.GetUsuarioByID)).Methods("GET")
 	auth.Handle("/api/usuarios", wrapAccess("usuario", "agregar", handlers.CreateUsuario(uploadDir))).Methods("POST")
 	auth.Handle("/api/usuarios/{id}", wrapAccess("usuario", "editar", handlers.UpdateUsuario(uploadDir))).Methods("PUT")
 	auth.Handle("/api/usuarios/{id}", wrapAccess("usuario", "eliminar", handlers.DeleteUsuario)).Methods("DELETE")
