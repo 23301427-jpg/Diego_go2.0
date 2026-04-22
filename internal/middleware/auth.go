@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	dbpkg "github.com/23301427-jpg/Diego_go2.0/internal/db"
 	"github.com/golang-jwt/jwt/v5"
-	dbpkg "mi-servidor-go/internal/db"
 )
 
 type contextKey string

@@ -3,8 +3,8 @@ package services
 import (
 	"database/sql"
 
-	dbpkg "mi-servidor-go/internal/db"
-	mw "mi-servidor-go/internal/middleware"
+	dbpkg "github.com/23301427-jpg/Diego_go2.0/internal/db"
+	mw "github.com/23301427-jpg/Diego_go2.0/internal/middleware"
 )
 
 type MenuModulo struct {

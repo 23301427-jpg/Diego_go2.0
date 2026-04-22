@@ -11,9 +11,9 @@ import (
 	"os"
 	"strings"
 
-	dbpkg "mi-servidor-go/internal/db"
-	mw "mi-servidor-go/internal/middleware"
-	"mi-servidor-go/internal/services"
+	dbpkg "github.com/23301427-jpg/Diego_go2.0/internal/db"
+	mw "github.com/23301427-jpg/Diego_go2.0/internal/middleware"
+	"github.com/23301427-jpg/Diego_go2.0/internal/services"
 )
 
 var recaptchaSecret = getEnvOr("RECAPTCHA_SECRET", "6LebTlYsAAAAAD0Q3XM3e6ah7CctvUEK4OEclWDR")
@@ -58,9 +58,9 @@ func PostLogin(tmpl *template.Template) http.HandlerFunc {
 		`, sql.Named("p1", usuario))
 
 		var (
-			idUsuario, idPerfil, idEstado int
+			idUsuario, idPerfil, idEstado              int
 			strNombre, strPwd, strCorreo, nombreEstado string
-			admin                          bool
+			admin                                      bool
 		)
 		if err := row.Scan(&idUsuario, &strNombre, &strPwd, &idPerfil, &idEstado, &strCorreo, &admin, &nombreEstado); err != nil {
 			http.Redirect(w, r, "/?error=Usuario o contraseña incorrectos", http.StatusFound)

@@ -1,4 +1,4 @@
-module mi-servidor-go
+module github.com/23301427-jpg/Diego_go2.0
 
 go 1.22
 

@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
+	dbpkg "github.com/23301427-jpg/Diego_go2.0/internal/db"
+	mw "github.com/23301427-jpg/Diego_go2.0/internal/middleware"
 	"github.com/gorilla/mux"
-	dbpkg "mi-servidor-go/internal/db"
-	mw "mi-servidor-go/internal/middleware"
 )
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -88,19 +88,23 @@ func GetCatalogosBase(w http.ResponseWriter, r *http.Request) {
 
 	perfiles, err := query("SELECT id, strNombrePerfil FROM Perfil ORDER BY strNombrePerfil")
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	estados, err := query("SELECT id, strNombreEstado FROM EstadoUsuario ORDER BY id")
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	modulos, err := query("SELECT id, strNombreModulo FROM Modulo ORDER BY id")
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	menus, err := query("SELECT id, strNombreMenu FROM Menu ORDER BY intOrdenMenu, id")
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteJSON(w, 200, map[string]interface{}{
 		"ok": true, "perfiles": perfiles, "estados": estados,
@@ -113,7 +117,8 @@ func GetStaticPermissions(w http.ResponseWriter, r *http.Request) {
 	perms := mw.PermsFromCtx(r)
 	perm := perms[moduleKey]
 	if perm == nil || !perm.Any {
-		WriteErr(w, 403, "No tienes permiso"); return
+		WriteErr(w, 403, "No tienes permiso")
+		return
 	}
 	WriteJSON(w, 200, map[string]interface{}{
 		"ok": true,
@@ -138,14 +143,15 @@ func GetPerfiles(w http.ResponseWriter, r *http.Request) {
 		offset, limit,
 	), sql.Named("p1", search))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	defer rows.Close()
 
 	type item struct {
-		ID              int    `json:"id"`
-		StrNombrePerfil string `json:"strNombrePerfil"`
-		BitAdministrador bool  `json:"bitAdministrador"`
+		ID               int    `json:"id"`
+		StrNombrePerfil  string `json:"strNombrePerfil"`
+		BitAdministrador bool   `json:"bitAdministrador"`
 	}
 	data := []item{}
 	for rows.Next() {
@@ -170,7 +176,8 @@ func GetPerfilByID(w http.ResponseWriter, r *http.Request) {
 	err := dbpkg.DB.QueryRow("SELECT id, strNombrePerfil, bitAdministrador FROM Perfil WHERE id=@p1", sql.Named("p1", id)).
 		Scan(&it.ID, &it.StrNombrePerfil, &it.BitAdministrador)
 	if err != nil {
-		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil}); return
+		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil})
+		return
 	}
 	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": it})
 }
@@ -183,7 +190,8 @@ func CreatePerfil(w http.ResponseWriter, r *http.Request) {
 		sql.Named("p2", boolBody(b["bitAdministrador"])),
 	)
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -198,7 +206,8 @@ func UpdatePerfil(w http.ResponseWriter, r *http.Request) {
 		sql.Named("p3", id),
 	)
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -207,7 +216,8 @@ func DeletePerfil(w http.ResponseWriter, r *http.Request) {
 	id := intParam(r, "id")
 	_, err := dbpkg.DB.Exec("DELETE FROM Perfil WHERE id=@p1", sql.Named("p1", id))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -226,12 +236,13 @@ func GetModulos(w http.ResponseWriter, r *http.Request) {
 		offset, limit,
 	), sql.Named("p1", search))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	defer rows.Close()
 
 	type item struct {
-		ID             int    `json:"id"`
+		ID              int    `json:"id"`
 		StrNombreModulo string `json:"strNombreModulo"`
 		StrClaveModulo  string `json:"strClaveModulo"`
 		StrRuta         string `json:"strRuta"`
@@ -260,7 +271,8 @@ func GetModuloByID(w http.ResponseWriter, r *http.Request) {
 	err := dbpkg.DB.QueryRow("SELECT id, strNombreModulo, strClaveModulo, strRuta FROM Modulo WHERE id=@p1", sql.Named("p1", id)).
 		Scan(&it.ID, &it.StrNombreModulo, &it.StrClaveModulo, &it.StrRuta)
 	if err != nil {
-		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil}); return
+		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil})
+		return
 	}
 	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": it})
 }
@@ -274,7 +286,8 @@ func CreateModulo(w http.ResponseWriter, r *http.Request) {
 		sql.Named("p3", b["strRuta"]),
 	)
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -290,7 +303,8 @@ func UpdateModulo(w http.ResponseWriter, r *http.Request) {
 		sql.Named("p4", id),
 	)
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -299,7 +313,8 @@ func DeleteModulo(w http.ResponseWriter, r *http.Request) {
 	id := intParam(r, "id")
 	_, err := dbpkg.DB.Exec("DELETE FROM Modulo WHERE id=@p1", sql.Named("p1", id))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -326,21 +341,22 @@ func GetPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 			OFFSET %d ROWS FETCH NEXT %d ROWS ONLY`, offset, limit),
 			sql.Named("p1", idPerfil))
 		if err != nil {
-			WriteErr(w, 500, err.Error()); return
+			WriteErr(w, 500, err.Error())
+			return
 		}
 		defer rows.Close()
 
 		type item struct {
-			ID               int    `json:"id"`
-			IDModulo         int    `json:"idModulo"`
-			IDPerfil         int    `json:"idPerfil"`
-			BitAgregar       bool   `json:"bitAgregar"`
-			BitEditar        bool   `json:"bitEditar"`
-			BitConsulta      bool   `json:"bitConsulta"`
-			BitEliminar      bool   `json:"bitEliminar"`
-			BitDetalle       bool   `json:"bitDetalle"`
-			StrNombrePerfil  string `json:"strNombrePerfil"`
-			StrNombreModulo  string `json:"strNombreModulo"`
+			ID              int    `json:"id"`
+			IDModulo        int    `json:"idModulo"`
+			IDPerfil        int    `json:"idPerfil"`
+			BitAgregar      bool   `json:"bitAgregar"`
+			BitEditar       bool   `json:"bitEditar"`
+			BitConsulta     bool   `json:"bitConsulta"`
+			BitEliminar     bool   `json:"bitEliminar"`
+			BitDetalle      bool   `json:"bitDetalle"`
+			StrNombrePerfil string `json:"strNombrePerfil"`
+			StrNombreModulo string `json:"strNombreModulo"`
 		}
 		data := []item{}
 		for rows.Next() {
@@ -359,7 +375,8 @@ func GetPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 	// No idPerfil: return perfiles list
 	rows, err := dbpkg.DB.Query("SELECT id, strNombrePerfil FROM Perfil ORDER BY strNombrePerfil")
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	defer rows.Close()
 	type pf struct {
@@ -394,7 +411,8 @@ func UpsertPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 			sql.Named("p3", ag), sql.Named("p4", ed), sql.Named("p5", co), sql.Named("p6", el), sql.Named("p7", de),
 			sql.Named("p8", id))
 		if err != nil {
-			WriteErr(w, 500, err.Error()); return
+			WriteErr(w, 500, err.Error())
+			return
 		}
 	} else {
 		var existingID int
@@ -411,7 +429,8 @@ func UpsertPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 				sql.Named("p3", ag), sql.Named("p4", ed), sql.Named("p5", co), sql.Named("p6", el), sql.Named("p7", de))
 		}
 		if err != nil {
-			WriteErr(w, 500, err.Error()); return
+			WriteErr(w, 500, err.Error())
+			return
 		}
 	}
 	WriteOK(w)
@@ -421,7 +440,8 @@ func DeletePermisosPerfil(w http.ResponseWriter, r *http.Request) {
 	id := intParam(r, "id")
 	_, err := dbpkg.DB.Exec("DELETE FROM PermisosPerfil WHERE id=@p1", sql.Named("p1", id))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -446,7 +466,8 @@ func GetUsuarios(w http.ResponseWriter, r *http.Request) {
 		ORDER BY u.id DESC OFFSET %d ROWS FETCH NEXT %d ROWS ONLY`, offset, limit),
 		sql.Named("p1", search))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	defer rows.Close()
 
@@ -491,7 +512,8 @@ func GetUsuarioByID(w http.ResponseWriter, r *http.Request) {
 	err := dbpkg.DB.QueryRow(`SELECT id, strNombreUsuario, idPerfil, strPwd, idEstadoUsuario, strCorreo, strNumeroCelular, strImagen FROM Usuario WHERE id=@p1`,
 		sql.Named("p1", id)).Scan(&it.ID, &it.StrNombreUsuario, &it.IDPerfil, &it.StrPwd, &it.IDEstadoUsuario, &it.StrCorreo, &it.StrNumeroCelular, &it.StrImagen)
 	if err != nil {
-		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil}); return
+		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": nil})
+		return
 	}
 	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": it})
 }
@@ -501,13 +523,15 @@ func CreateUsuario(uploadDir string) http.HandlerFunc {
 		r.ParseMultipartForm(3 << 20)
 		telefono := onlyDigits(r.FormValue("strNumeroCelular"))
 		if !isValidPhone(telefono) {
-			WriteErr(w, 400, "El número de teléfono debe tener exactamente 10 dígitos."); return
+			WriteErr(w, 400, "El número de teléfono debe tener exactamente 10 dígitos.")
+			return
 		}
 		var strImagen sql.NullString
 		if fh := getFileHeader(r, "strImagen"); fh != nil {
 			imgPath, err := saveUpload(fh, uploadDir)
 			if err != nil {
-				WriteErr(w, 500, err.Error()); return
+				WriteErr(w, 500, err.Error())
+				return
 			}
 			strImagen = sql.NullString{String: imgPath, Valid: true}
 		}
@@ -520,7 +544,8 @@ func CreateUsuario(uploadDir string) http.HandlerFunc {
 			sql.Named("p6", telefono),
 			sql.Named("p7", strImagen))
 		if err != nil {
-			WriteErr(w, 500, err.Error()); return
+			WriteErr(w, 500, err.Error())
+			return
 		}
 		WriteOK(w)
 	}
@@ -532,13 +557,15 @@ func UpdateUsuario(uploadDir string) http.HandlerFunc {
 		r.ParseMultipartForm(3 << 20)
 		telefono := onlyDigits(r.FormValue("strNumeroCelular"))
 		if !isValidPhone(telefono) {
-			WriteErr(w, 400, "El número de teléfono debe tener exactamente 10 dígitos."); return
+			WriteErr(w, 400, "El número de teléfono debe tener exactamente 10 dígitos.")
+			return
 		}
 		var strImagen sql.NullString
 		if fh := getFileHeader(r, "strImagen"); fh != nil {
 			imgPath, err := saveUpload(fh, uploadDir)
 			if err != nil {
-				WriteErr(w, 500, err.Error()); return
+				WriteErr(w, 500, err.Error())
+				return
 			}
 			strImagen = sql.NullString{String: imgPath, Valid: true}
 		} else {
@@ -556,7 +583,8 @@ func UpdateUsuario(uploadDir string) http.HandlerFunc {
 			sql.Named("p7", strImagen),
 			sql.Named("p8", id))
 		if err != nil {
-			WriteErr(w, 500, err.Error()); return
+			WriteErr(w, 500, err.Error())
+			return
 		}
 		WriteOK(w)
 	}
@@ -566,7 +594,8 @@ func DeleteUsuario(w http.ResponseWriter, r *http.Request) {
 	id := intParam(r, "id")
 	_, err := dbpkg.DB.Exec("DELETE FROM Usuario WHERE id=@p1", sql.Named("p1", id))
 	if err != nil {
-		WriteErr(w, 500, err.Error()); return
+		WriteErr(w, 500, err.Error())
+		return
 	}
 	WriteOK(w)
 }
@@ -609,5 +638,3 @@ func saveUpload(fh *multipart.FileHeader, dir string) (string, error) {
 	io.Copy(out, f)
 	return "/uploads/users/" + filename, nil
 }
-
-

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mi-servidor-go
+    name: Diego_go2.0
     runtime: go
     buildCommand: go build -o server ./cmd/server
     startCommand: ./server
