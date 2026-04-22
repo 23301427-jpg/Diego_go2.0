@@ -274,3 +274,18 @@ func IntPtr(s string) int {
 	fmt.Sscanf(s, "%d", &v)
 	return v
 }
+
+// GetMyPermissions devuelve los permisos del usuario autenticado en tiempo real
+func GetMyPermissions(w http.ResponseWriter, r *http.Request) {
+	user := mw.UserFromCtx(r)
+	if user == nil {
+		WriteErr(w, 401, "No autenticado")
+		return
+	}
+	perms := mw.PermsFromCtx(r)
+	WriteJSON(w, 200, map[string]interface{}{
+		"ok":          true,
+		"permissions": permsToMapAdmin(perms, user.Administrador),
+		"isAdmin":     user.Administrador,
+	})
+}

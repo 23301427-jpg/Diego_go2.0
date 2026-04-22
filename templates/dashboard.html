@@ -426,7 +426,7 @@
 
 <script>
 // ─── BOOTSTRAP DATA ───────────────────────────────────────────────────────
-const PERMISSIONS = {{toJSON .Permissions}};
+let PERMISSIONS = {{toJSON .Permissions}};
 const IS_ADMIN = {{if .IsAdmin}}true{{else}}false{{end}};
 const INITIAL_MODULE = {{toJSON .InitialModule}};
 
@@ -604,7 +604,7 @@ function navTo(e, key, name, _) {
   activateModule(key, name);
 }
 
-function activateModule(key, name) {
+async function activateModule(key, name) {
   APP.moduleKey = key;
   APP.moduleName = name;
   APP.page = 1;
@@ -624,6 +624,9 @@ function activateModule(key, name) {
     loadHomeStats();
     return;
   }
+
+  // Recargar permisos en tiempo real para no-admin
+  if (!IS_ADMIN) await refreshPermissions();
 
   showView('module');
 
@@ -665,6 +668,14 @@ async function apiFetch(method, url, body = null) {
 function perm() {
   if (IS_ADMIN) return { agregar: true, editar: true, consulta: true, eliminar: true, detalle: true, any: true };
   return PERMISSIONS[APP.moduleKey] || {};
+}
+
+// Recarga los permisos del usuario desde el servidor (para reflejar cambios en tiempo real)
+async function refreshPermissions() {
+  try {
+    const d = await fetch('/api/me/permissions').then(r => r.json());
+    if (d.ok) PERMISSIONS = d.permissions;
+  } catch(e) { /* silencioso */ }
 }
 
 // ─── HOME STATS ───────────────────────────────────────────────────────────
@@ -1038,7 +1049,7 @@ function renderPermTable(rows, page, totalPages) {
         const idx = globalOffset + i + 1;
         const bits = ['bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'];
         const checks = bits.map(b =>
-          `<td style="text-align:center"><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''}></td>`
+          `<td style="text-align:center"><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''} ${!p.editar ? 'disabled' : ''}></td>`
         ).join('');
         const saveBtn = p.editar ? `<button class="btn btn-success btn-sm" onclick="savePermRow(this,${row.id||0},${row.idPerfil},${row.idModulo})">Guardar</button>` : '';
         const detailBtn = p.detalle ? `<button class="btn btn-accent btn-sm" onclick="viewPermDetail(${i})">Ver</button>` : '';

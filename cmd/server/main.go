@@ -75,6 +75,7 @@ func main() {
 	// API Catalogos
 	auth.HandleFunc("/api/catalogos/base", handlers.GetCatalogosBase).Methods("GET")
 	auth.HandleFunc("/api/static/{moduleKey}", handlers.GetStaticPermissions).Methods("GET")
+	auth.HandleFunc("/api/me/permissions", handlers.GetMyPermissions).Methods("GET")
 
 	// API Perfiles
 	auth.Handle("/api/perfiles", wrapAccess("perfil", "consulta", handlers.GetPerfiles)).Methods("GET")
@@ -90,11 +91,11 @@ func main() {
 	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "editar", handlers.UpdateModulo)).Methods("PUT")
 	auth.Handle("/api/modulos/{id}", wrapAccess("modulo", "eliminar", handlers.DeleteModulo)).Methods("DELETE")
 
-	// API Permisos Perfil
-	auth.Handle("/api/permisos-perfil", wrapAccess("permisos_perfil", "consulta", handlers.GetPermisosPerfil)).Methods("GET")
-	auth.Handle("/api/permisos-perfil", wrapAccess("permisos_perfil", "agregar", handlers.UpsertPermisosPerfil)).Methods("POST")
-	auth.Handle("/api/permisos-perfil/{id}", wrapAccess("permisos_perfil", "editar", handlers.UpsertPermisosPerfil)).Methods("PUT")
-	auth.Handle("/api/permisos-perfil/{id}", wrapAccess("permisos_perfil", "eliminar", handlers.DeletePermisosPerfil)).Methods("DELETE")
+	// API Permisos Perfil — solo requiere autenticacion; permisos se controlan en la pagina
+	auth.HandleFunc("/api/permisos-perfil", handlers.GetPermisosPerfil).Methods("GET")
+	auth.HandleFunc("/api/permisos-perfil", handlers.UpsertPermisosPerfil).Methods("POST")
+	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.UpsertPermisosPerfil).Methods("PUT")
+	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.DeletePermisosPerfil).Methods("DELETE")
 
 	// API Usuarios
 	auth.Handle("/api/usuarios", wrapAccess("usuario", "consulta", handlers.GetUsuarios)).Methods("GET")
