@@ -93,8 +93,7 @@ func main() {
 
 	// API Permisos Perfil — solo requiere autenticacion; permisos se controlan en la pagina
 	auth.HandleFunc("/api/permisos-perfil", handlers.GetPermisosPerfil).Methods("GET")
-	auth.HandleFunc("/api/permisos-perfil", handlers.UpsertPermisosPerfil).Methods("POST")
-	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.UpsertPermisosPerfil).Methods("PUT")
+	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.UpsertPermisosPerfil).Methods("POST", "PUT")
 	auth.HandleFunc("/api/permisos-perfil/{id}", handlers.DeletePermisosPerfil).Methods("DELETE")
 
 	// API Usuarios

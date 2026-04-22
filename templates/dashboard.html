@@ -1101,11 +1101,16 @@ async function savePermRow(btn, rowId, idPerfil, idModulo) {
     bitEliminar: tr.querySelector('[data-field="bitEliminar"]').checked ? '1' : '0',
     bitDetalle:  tr.querySelector('[data-field="bitDetalle"]').checked  ? '1' : '0',
   };
-  const url = `/api/permisos-perfil/${rowId || 0}`;
-  const method = rowId > 0 ? 'PUT' : 'POST';
-  const d = await apiFetch(method, url, body);
-  if (d.ok) showStatus('¡Guardado!', 'Permisos actualizados correctamente.');
-  else toast(d.message || 'Error al guardar', 'error');
+  // Siempre POST a /{id} — el backend hace upsert (id=0 = nuevo, id>0 = update)
+  const id = rowId > 0 ? rowId : 0;
+  const d = await apiFetch('POST', `/api/permisos-perfil/${id}`, body);
+  if (d.ok) {
+    showStatus('¡Guardado!', 'Permisos actualizados correctamente.');
+  } else {
+    toast(d.message || 'Error al guardar', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
   loadPermRows(APP.permPage || APP.page || 1);
 }
 
