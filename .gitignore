@@ -1,0 +1,8 @@
+.env
+server
+*.exe
+static/uploads/users/*.jpg
+static/uploads/users/*.png
+static/uploads/users/*.webp
+static/uploads/*.png
+static/uploads/*.jpg

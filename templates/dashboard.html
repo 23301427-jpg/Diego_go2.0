@@ -1,0 +1,1171 @@
+{{define "dashboard.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diegogo — Sistema Corporativo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:       #1a3a5c;
+      --primary-light: #2563a8;
+      --accent:        #0ea5e9;
+      --sidebar-bg:    #0c1f35;
+      --sidebar-w:     248px;
+      --header-h:      58px;
+      --surface:       #ffffff;
+      --bg:            #f1f5f9;
+      --text:          #1e293b;
+      --muted:         #64748b;
+      --border:        #e2e8f0;
+      --danger:        #dc2626;
+      --danger-bg:     #fef2f2;
+      --success:       #16a34a;
+      --success-bg:    #f0fdf4;
+      --warn:          #d97706;
+      --warn-bg:       #fffbeb;
+      --radius:        6px;
+      --shadow:        0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:     0 4px 16px rgba(0,0,0,.12);
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+      background: var(--sidebar-bg); display: flex; flex-direction: column; z-index: 200;
+      transition: transform .25s;
+    }
+    .sidebar-logo {
+      height: var(--header-h); display: flex; align-items: center; gap: 10px;
+      padding: 0 18px; border-bottom: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
+    }
+    .sidebar-logo-icon {
+      width: 32px; height: 32px; background: var(--accent); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sidebar-logo-icon svg { width: 18px; height: 18px; color: #fff; }
+    .sidebar-logo-text { color: #f8fafc; font-weight: 800; font-size: 16px; letter-spacing: -.3px; }
+    .sidebar-logo-badge {
+      margin-left: auto; font-size: 9px; font-weight: 700; background: var(--accent);
+      color: #fff; padding: 2px 6px; border-radius: 20px; letter-spacing: .05em;
+    }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 10px 0; }
+    .sidebar-nav::-webkit-scrollbar { width: 3px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+    .nav-section-label {
+      padding: 10px 18px 3px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.3);
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px; padding: 8px 18px;
+      color: rgba(255,255,255,.6); font-size: 13.5px; cursor: pointer;
+      transition: background .15s, color .15s; text-decoration: none; user-select: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.9); }
+    .nav-item.active { background: rgba(14,165,233,.2); color: #38bdf8; }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+    .nav-item.active svg { opacity: 1; }
+    .sidebar-footer {
+      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.07);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px; flex-shrink: 0; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { color: #f1f5f9; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { color: rgba(255,255,255,.38); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .logout-btn {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,.35); border-radius: 6px; cursor: pointer;
+      transition: color .15s, background .15s; text-decoration: none;
+    }
+    .logout-btn:hover { color: #f87171; background: rgba(248,113,113,.12); }
+    .logout-btn svg { width: 16px; height: 16px; }
+
+    /* ── HEADER ── */
+    .header {
+      position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--header-h);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .menu-toggle {
+      display: none; width: 36px; height: 36px; align-items: center; justify-content: center;
+      border: none; background: transparent; cursor: pointer; border-radius: var(--radius);
+      color: var(--muted);
+    }
+    .menu-toggle svg { width: 20px; height: 20px; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .breadcrumb .sep { color: var(--border); }
+    .breadcrumb .crumb-current { color: var(--text); font-weight: 600; }
+    .header-user { font-size: 12px; color: var(--muted); }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); margin-top: var(--header-h); padding: 24px; min-height: calc(100vh - var(--header-h)); }
+
+    /* ── PAGE HEADER ── */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .page-title { font-size: 20px; font-weight: 700; color: var(--text); }
+    .page-subtitle { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    /* ── CARD ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .card-body { padding: 20px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+      border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity .15s; text-decoration: none; line-height: 1; white-space: nowrap;
+    }
+    .btn:hover { opacity: .88; }
+    .btn svg { width: 14px; height: 14px; }
+    .btn-primary { background: var(--primary-light); color: #fff; }
+    .btn-accent  { background: var(--accent); color: #fff; }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-warn    { background: var(--warn); color: #fff; }
+    .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); opacity: 1; }
+    .btn-sm { padding: 6px 11px; font-size: 12px; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead { background: #f8fafc; }
+    th { padding: 9px 14px; text-align: left; font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+    td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+    .td-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    /* ── FORM ── */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--text); }
+    .field input, .field select, .field textarea {
+      padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; color: var(--text); background: var(--surface);
+      transition: border-color .15s, box-shadow .15s; outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(37,99,168,.1);
+    }
+    .field-full { grid-column: 1 / -1; }
+    .field-check { flex-direction: row; align-items: center; gap: 8px; padding: 6px 0; }
+    .field-check input { width: 16px; height: 16px; accent-color: var(--primary-light); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+    /* ── SEARCH ── */
+    .search-bar {
+      display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface); width: 220px;
+    }
+    .search-bar svg { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+    .search-bar input { border: none; outline: none; font-size: 13px; width: 100%; color: var(--text); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: var(--success-bg); color: var(--success); }
+    .badge-red   { background: var(--danger-bg); color: var(--danger); }
+    .badge-blue  { background: #eff6ff; color: #2563eb; }
+    .badge-gray  { background: #f1f5f9; color: var(--muted); }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; align-items: center; gap: 5px; margin-top: 14px; justify-content: flex-end; }
+    .pagination button {
+      min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius);
+      font-size: 13px; cursor: pointer; color: var(--text); transition: background .15s, color .15s;
+    }
+    .pagination button:hover { background: var(--bg); }
+    .pagination button.active { background: var(--primary-light); color: #fff; border-color: var(--primary-light); }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .pag-info { font-size: 12px; color: var(--muted); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,30,47,.55); backdrop-filter: blur(2px);
+      z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border-radius: 10px; width: 100%; max-width: 540px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.28); animation: modalIn .18s ease;
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(.96) translateY(8px); } }
+    .modal-lg { max-width: 660px; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; border-radius: var(--radius); cursor: pointer; color: var(--muted); font-size: 16px; }
+    .modal-close:hover { background: var(--bg); }
+    .modal-body { padding: 22px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); }
+
+    /* ── DETAIL GRID ── */
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .detail-box {
+      padding: 9px 12px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 13px; min-height: 36px;
+    }
+    .detail-image { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+
+    /* ── STATS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; align-items: flex-start; gap: 12px; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stat-icon svg { width: 19px; height: 19px; }
+    .stat-icon.blue  { background: #eff6ff; color: #2563eb; }
+    .stat-icon.green { background: var(--success-bg); color: var(--success); }
+    .stat-icon.amber { background: var(--warn-bg); color: var(--warn); }
+    .stat-icon.sky   { background: #f0f9ff; color: #0369a1; }
+    .stat-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* ── GALLERY ── */
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .gallery-item { border-radius: 6px; overflow: hidden; aspect-ratio: 1; background: var(--bg); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ── STATIC MODULE ── */
+    .static-module-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+
+    /* ── PERM CHECKBOX ── */
+    .perm-check { width: 16px; height: 16px; accent-color: var(--primary-light); cursor: pointer; }
+
+    /* ── TOAST ── */
+    .toast-wrap { position: fixed; bottom: 22px; right: 22px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast {
+      display: flex; align-items: center; gap: 9px; padding: 11px 15px; border-radius: 8px;
+      font-size: 13px; font-weight: 500; min-width: 220px; box-shadow: var(--shadow-md);
+      animation: toastIn .2s ease; color: #fff; pointer-events: auto;
+    }
+    @keyframes toastIn { from { opacity:0; transform:translateY(10px); } }
+    .toast.success { background: var(--success); }
+    .toast.error   { background: var(--danger); }
+    .toast.info    { background: var(--primary-light); }
+    .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── MOBILE ── */
+    .mob-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 150; display: none; }
+    .mob-overlay.open { display: block; }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .header { left: 0; }
+      .main { margin-left: 0; }
+      .menu-toggle { display: flex; }
+      .header-user { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1"/>
+      </svg>
+    </div>
+    <span class="sidebar-logo-text">Diegogo</span>
+    <span class="sidebar-logo-badge">CORP</span>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+    <div class="nav-section-label">General</div>
+    <a class="nav-item" href="#" data-key="home" onclick="navTo(event,'home','Dashboard','')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Dashboard
+    </a>
+
+    {{range .Menus}}
+    <div class="nav-section-label">{{.Nombre}}</div>
+    {{range .Modulos}}
+    <a class="nav-item" href="#" data-key="{{.Clave}}" onclick="navTo(event,'{{.Clave}}','{{.Nombre}}','{{$.Menus}}')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      {{.Nombre}}
+    </a>
+    {{end}}
+    {{end}}
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-avatar">
+      {{if .User.StrImagen.Valid}}<img src="{{.User.StrImagen.String}}" alt="">{{else}}{{firstChar .User.StrNombreUsuario}}{{end}}
+    </div>
+    <div class="user-info">
+      <div class="user-name">{{.User.StrNombreUsuario}}</div>
+      <div class="user-role">{{.User.StrNombrePerfil}}</div>
+    </div>
+    <a class="logout-btn" href="/logout" title="Cerrar sesión">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+    </a>
+  </div>
+</aside>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div class="breadcrumb">
+      <span>Diegogo</span>
+      <span class="sep">/</span>
+      <span class="crumb-current" id="bcCurrent">Dashboard</span>
+    </div>
+  </div>
+  <div class="header-user">{{.User.StrCorreo}}</div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="main" id="appContent">
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Bienvenido, {{.User.StrNombreUsuario}}</div>
+        <div class="page-subtitle">Panel de control · Diegogo Sistema Corporativo</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+        <div><div class="stat-value" id="s-usuarios">—</div><div class="stat-label">Usuarios</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+        <div><div class="stat-value" id="s-perfiles">—</div><div class="stat-label">Perfiles</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
+        <div><div class="stat-value" id="s-modulos">—</div><div class="stat-label">Módulos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon sky"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+        <div><div class="stat-value" id="s-imgs">—</div><div class="stat-label">Imágenes</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Módulos disponibles</span></div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:9px">
+        {{range .Menus}}{{range .Modulos}}
+        <a class="btn btn-ghost" href="#" onclick="navTo(event,'{{.Clave}}','{{.Nombre}}','')">{{.Nombre}}</a>
+        {{end}}{{end}}
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE CONTENT AREA (rendered by JS) -->
+  <div class="view" id="view-module">
+    <div id="moduleContent"></div>
+  </div>
+
+</main>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- MODAL: Detalle -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="detailModalTitle">Detalle</span>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: Confirmar -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title" id="confirmModalTitle">Confirmar</span>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--muted);line-height:1.6" id="confirmModalMsg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('confirmModal')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmModalOk">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Status -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal" style="max-width:340px;text-align:center">
+    <div class="modal-body" style="padding:32px 24px">
+      <div style="font-size:36px;margin-bottom:10px">✅</div>
+      <div class="modal-title" id="statusModalTitle" style="font-size:16px;margin-bottom:6px"></div>
+      <p style="font-size:13px;color:var(--muted)" id="statusModalMsg"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── BOOTSTRAP DATA ───────────────────────────────────────────────────────
+const PERMISSIONS = {{toJSON .Permissions}};
+const INITIAL_MODULE = {{toJSON .InitialModule}};
+
+// ─── APP STATE ────────────────────────────────────────────────────────────
+const APP = {
+  moduleKey: null,
+  moduleName: '',
+  view: 'list',     // list | form | home
+  page: 1,
+  search: '',
+  editingId: null,
+  catalogs: null,
+  confirmCb: null,
+  statusTimer: null,
+  permFilterPerfil: '',
+  permRows: [],
+  permTotalPages: 1,
+};
+
+// ─── SCHEMAS ──────────────────────────────────────────────────────────────
+const SCHEMAS = {
+  perfil: {
+    title: 'Perfiles',
+    singleTitle: 'Perfil',
+    description: 'Gestión de perfiles de acceso al sistema.',
+    endpoint: '/api/perfiles',
+    search: true,
+    searchLabel: 'Buscar perfil',
+    searchPlaceholder: 'Nombre del perfil...',
+    columns: [
+      { key: 'id', label: 'ID' },
+      { key: 'strNombrePerfil', label: 'Nombre' },
+      { key: 'bitAdministrador', label: 'Administrador', render: v => v
+        ? '<span class="badge badge-green">Sí</span>'
+        : '<span class="badge badge-gray">No</span>' },
+    ],
+    detailLabels: { strNombrePerfil: 'Nombre del perfil', bitAdministrador: 'Es administrador' },
+    form: [
+      { name: 'strNombrePerfil', label: 'Nombre del perfil', type: 'text', required: true, maxLength: 80 },
+      { name: 'bitAdministrador', label: 'Es administrador', type: 'checkbox' },
+    ],
+  },
+
+  modulo: {
+    title: 'Módulos',
+    singleTitle: 'Módulo',
+    description: 'Gestión de módulos del sistema.',
+    endpoint: '/api/modulos',
+    search: true,
+    searchLabel: 'Buscar módulo',
+    searchPlaceholder: 'Nombre del módulo...',
+    columns: [
+      { key: 'id', label: 'ID' },
+      { key: 'strNombreModulo', label: 'Nombre' },
+      { key: 'strClaveModulo', label: 'Clave', render: v => `<code style="background:var(--bg);padding:2px 7px;border-radius:4px;font-size:12px">${esc(v)}</code>` },
+      { key: 'strRuta', label: 'Ruta', render: v => `<code style="font-size:12px;color:var(--muted)">${esc(v)}</code>` },
+    ],
+    detailLabels: { strNombreModulo: 'Nombre', strClaveModulo: 'Clave', strRuta: 'Ruta' },
+    form: [
+      { name: 'strNombreModulo', label: 'Nombre del módulo', type: 'text', required: true, maxLength: 80 },
+      { name: 'strClaveModulo',  label: 'Clave (única)', type: 'text', required: true, maxLength: 50 },
+      { name: 'strRuta',         label: 'Ruta', type: 'text', required: true, maxLength: 120 },
+    ],
+  },
+
+  permisos_perfil: {
+    title: 'Permisos por Perfil',
+    singleTitle: 'Permiso',
+    description: 'Asignación de permisos de módulos a perfiles.',
+    endpoint: '/api/permisos-perfil',
+    search: false,
+    columns: [],
+    detailLabels: {
+      strNombrePerfil: 'Perfil', strNombreModulo: 'Módulo',
+      bitAgregar: 'Agregar', bitEditar: 'Editar', bitConsulta: 'Consulta',
+      bitEliminar: 'Eliminar', bitDetalle: 'Detalle',
+    },
+    form: [],
+  },
+
+  usuario: {
+    title: 'Usuarios',
+    singleTitle: 'Usuario',
+    description: 'Gestión de cuentas de usuario del sistema.',
+    endpoint: '/api/usuarios',
+    search: true,
+    searchLabel: 'Buscar usuario',
+    searchPlaceholder: 'Nombre o correo...',
+    columns: [
+      { key: 'id', label: 'ID' },
+      { key: 'strNombreUsuario', label: 'Usuario' },
+      { key: 'strCorreo', label: 'Correo' },
+      { key: 'strNombrePerfil', label: 'Perfil' },
+      { key: 'idEstadoUsuario', label: 'Estado', render: (v, row) => v === 1
+        ? '<span class="badge badge-green">Activo</span>'
+        : `<span class="badge badge-red">${esc(row.strNombreEstado||'Inactivo')}</span>` },
+    ],
+    detailLabels: {
+      strNombreUsuario: 'Usuario', strCorreo: 'Correo', strNumeroCelular: 'Teléfono',
+      idPerfil: 'Perfil', idEstadoUsuario: 'Estado', strImagen: 'Foto',
+    },
+    form: [
+      { name: 'strNombreUsuario', label: 'Nombre de usuario', type: 'text', required: true, maxLength: 80 },
+      { name: 'strCorreo',        label: 'Correo electrónico', type: 'email', required: true, maxLength: 120 },
+      { name: 'strPwd',           label: 'Contraseña', type: 'password', required: false, maxLength: 120 },
+      { name: 'strNumeroCelular', label: 'Teléfono (10 dígitos)', type: 'tel', required: true, maxLength: 10 },
+      { name: 'idPerfil',         label: 'Perfil', type: 'select', required: true, optionsKey: 'perfiles', textKey: 'nombre' },
+      { name: 'idEstadoUsuario',  label: 'Estado', type: 'select', required: true, optionsKey: 'estados', textKey: 'nombre' },
+      { name: 'strImagen',        label: 'Fotografía', type: 'file', accept: 'image/jpeg,image/png,image/webp' },
+    ],
+  },
+};
+
+// Static modules (principal_X_X) — same schema structure
+['principal_1_1','principal_1_2','principal_2_1','principal_2_2'].forEach(k => {
+  SCHEMAS[k] = null; // null = static view
+});
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function esc(v) {
+  if (v == null) return '';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function boolLabel(v) {
+  return v ? '<span class="badge badge-green">Sí</span>' : '<span class="badge badge-gray">No</span>';
+}
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icon = type === 'success'
+    ? '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>'
+    : '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>';
+  el.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">${icon}</svg>${esc(msg)}`;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmModalTitle').textContent = title;
+  document.getElementById('confirmModalMsg').textContent = msg;
+  APP.confirmCb = cb;
+  openModal('confirmModal');
+}
+document.getElementById('confirmModalOk').onclick = () => {
+  if (APP.confirmCb) APP.confirmCb();
+};
+
+function showStatus(title, msg) {
+  document.getElementById('statusModalTitle').textContent = title;
+  document.getElementById('statusModalMsg').textContent = msg;
+  openModal('statusModal');
+  clearTimeout(APP.statusTimer);
+  APP.statusTimer = setTimeout(() => closeModal('statusModal'), 2000);
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobOverlay').classList.remove('open');
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────
+function navTo(e, key, name, _) {
+  e && e.preventDefault();
+  if (window.innerWidth <= 768) closeSidebar();
+  activateModule(key, name);
+}
+
+function activateModule(key, name) {
+  APP.moduleKey = key;
+  APP.moduleName = name;
+  APP.page = 1;
+  APP.search = '';
+  APP.editingId = null;
+
+  // Breadcrumb
+  document.getElementById('bcCurrent').textContent = name || 'Dashboard';
+
+  // Nav highlight
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.key === key);
+  });
+
+  if (key === 'home') {
+    showView('home');
+    loadHomeStats();
+    return;
+  }
+
+  showView('module');
+
+  const schema = SCHEMAS[key];
+  if (key === 'galeria') {
+    renderGalleryView();
+  } else if (schema === null) {
+    renderStaticModule();
+  } else if (schema) {
+    if (key === 'permisos_perfil') {
+      renderPermisosPerfil();
+    } else {
+      loadList(1);
+    }
+  } else {
+    // Unknown key — render static placeholder
+    renderStaticModule();
+  }
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id)?.classList.add('active');
+}
+
+// ─── API ─────────────────────────────────────────────────────────────────
+async function apiFetch(method, url, body = null) {
+  const opts = { method };
+  if (body instanceof FormData) {
+    opts.body = body;
+  } else if (body) {
+    opts.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    opts.body = new URLSearchParams(body).toString();
+  }
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+function perm() { return PERMISSIONS[APP.moduleKey] || {}; }
+
+// ─── HOME STATS ───────────────────────────────────────────────────────────
+async function loadHomeStats() {
+  const [u, p, m, g] = await Promise.allSettled([
+    fetch('/api/usuarios?page=1').then(r => r.json()),
+    fetch('/api/perfiles?page=1').then(r => r.json()),
+    fetch('/api/modulos?page=1').then(r => r.json()),
+    fetch('/images').then(r => r.json()),
+  ]);
+  const totalOf = (res, fallback = '—') => {
+    if (res.status === 'fulfilled' && res.value.ok) return res.value.totalPages * 5;
+    return fallback;
+  };
+  document.getElementById('s-usuarios').textContent = totalOf(u);
+  document.getElementById('s-perfiles').textContent = totalOf(p);
+  document.getElementById('s-modulos').textContent  = totalOf(m);
+  if (g.status === 'fulfilled' && Array.isArray(g.value))
+    document.getElementById('s-imgs').textContent = g.value.length;
+}
+
+// ─── STATIC MODULE ────────────────────────────────────────────────────────
+function renderStaticModule() {
+  const p = perm();
+  document.getElementById('moduleContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">${esc(APP.moduleName)}</div><div class="page-subtitle">Módulo del sistema</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Acciones disponibles</span></div>
+      <div class="card-body">
+        <div class="static-module-actions">
+          ${p.agregar  ? `<button class="btn btn-success">+ Agregar</button>` : ''}
+          ${p.editar   ? `<button class="btn btn-warn">✏️ Editar</button>` : ''}
+          ${p.consulta ? `<button class="btn btn-primary">🔍 Consultar</button>` : ''}
+          ${p.eliminar ? `<button class="btn btn-danger">🗑 Eliminar</button>` : ''}
+          ${p.detalle  ? `<button class="btn btn-accent">👁 Ver detalle</button>` : ''}
+          ${!p.any ? '<p style="color:var(--muted);font-size:13px">No tienes permisos asignados para este módulo.</p>' : ''}
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;font-size:13px;color:var(--muted);line-height:1.7">
+          Esta pantalla muestra los botones de acción habilitados para tu perfil en el módulo <strong>${esc(APP.moduleName)}</strong>.
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── LIST ─────────────────────────────────────────────────────────────────
+async function loadList(page = 1) {
+  APP.page = page;
+  const schema = SCHEMAS[APP.moduleKey];
+  if (!schema) return renderStaticModule();
+
+  let url = `${schema.endpoint}?page=${page}`;
+  if (schema.search && APP.search) url += `&search=${encodeURIComponent(APP.search)}`;
+
+  const d = await apiFetch('GET', url);
+  renderList(schema, d.data || [], d.totalPages || 1, page);
+}
+
+function renderList(schema, rows, totalPages, page) {
+  const p = perm();
+  const extraCols = [
+    p.detalle  ? '<th>Detalle</th>'  : '',
+    p.editar   ? '<th>Editar</th>'   : '',
+    p.eliminar ? '<th>Eliminar</th>' : '',
+  ].join('');
+
+  const searchBar = schema.search ? `
+    <div class="card-header" style="gap:10px;flex-wrap:wrap;">
+      <span class="card-title">${esc(schema.title)}</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="search-bar">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input id="listSearch" placeholder="${esc(schema.searchPlaceholder)}" value="${esc(APP.search)}"
+            oninput="APP.search=this.value; debouncedList()">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="APP.search=''; document.getElementById('listSearch').value=''; loadList(1)">Limpiar</button>
+      </div>
+    </div>` : `<div class="card-header"><span class="card-title">${esc(schema.title)}</span></div>`;
+
+  const tbody = rows.length
+    ? rows.map(row => {
+        const cells = schema.columns.map(col => {
+          const val = col.render ? col.render(row[col.key], row) : esc(row[col.key] ?? '');
+          return `<td>${val}</td>`;
+        }).join('');
+        const detailBtn  = p.detalle  ? `<button class="btn btn-accent btn-sm"  onclick="viewRecord(${row.id})">Ver</button>` : '';
+        const editBtn    = p.editar   ? `<button class="btn btn-warn btn-sm"    onclick="openForm(${row.id})">Editar</button>` : '';
+        const deleteBtn  = p.eliminar ? `<button class="btn btn-danger btn-sm"  onclick="deleteRecord(${row.id})">Eliminar</button>` : '';
+        const actionCells = [
+          detailBtn  ? `<td>${detailBtn}</td>`  : '',
+          editBtn    ? `<td>${editBtn}</td>`    : '',
+          deleteBtn  ? `<td>${deleteBtn}</td>`  : '',
+        ].join('');
+        return `<tr>${cells}${actionCells}</tr>`;
+      }).join('')
+    : `<tr><td colspan="${schema.columns.length + 3}" style="text-align:center;padding:28px;color:var(--muted)">Sin registros</td></tr>`;
+
+  const pagHtml = renderPagination(page, totalPages);
+
+  document.getElementById('moduleContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">${esc(schema.title)}</div><div class="page-subtitle">${esc(schema.description)}</div></div>
+      ${p.agregar ? `<button class="btn btn-success" onclick="openForm(null)">+ Agregar ${esc(schema.singleTitle)}</button>` : ''}
+    </div>
+    <div class="card">
+      ${searchBar}
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${schema.columns.map(c=>`<th>${esc(c.label)}</th>`).join('')}${extraCols}</tr></thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>
+      <div class="card-body" style="padding-top:0">
+        <div class="pagination" id="listPag"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('listPag').innerHTML = pagHtml;
+}
+
+const debouncedList = debounce(() => loadList(1), 380);
+
+// ─── PAGINATION ───────────────────────────────────────────────────────────
+function renderPagination(page, total) {
+  if (total <= 1) return '';
+  let html = `<span class="pag-info">Pág ${page}/${total}</span>`;
+  html += `<button onclick="loadList(${page-1})" ${page<=1?'disabled':''}>‹</button>`;
+  const s = Math.max(1, page-1), e = Math.min(total, page+1);
+  for (let i = s; i <= e; i++)
+    html += `<button onclick="loadList(${i})" class="${i===page?'active':''}">${i}</button>`;
+  html += `<button onclick="loadList(${page+1})" ${page>=total?'disabled':''}>›</button>`;
+  return html;
+}
+
+// ─── DETAIL ──────────────────────────────────────────────────────────────
+async function viewRecord(id) {
+  const schema = SCHEMAS[APP.moduleKey];
+  const d = await apiFetch('GET', `${schema.endpoint}/${id}`);
+  if (!d.ok || !d.data) { toast('No se pudo cargar el registro', 'error'); return; }
+  await ensureCatalogs();
+  const data = d.data;
+  const keys = Object.keys(data).filter(k => k !== 'id');
+
+  const rows = keys.map(k => {
+    const label = schema.detailLabels?.[k] || k;
+    let val;
+    if (k === 'strImagen' && data[k]?.String) {
+      val = `<img src="${esc(data[k].String)}" alt="Foto" class="detail-image">`;
+    } else if (k === 'bitAdministrador' || k.startsWith('bit')) {
+      val = boolLabel(!!(data[k]?.Bool ?? data[k]));
+    } else if (k === 'idPerfil') {
+      const item = (APP.catalogs?.perfiles || []).find(x => String(x.id) === String(data[k]));
+      val = esc(item?.nombre || data[k] || '');
+    } else if (k === 'idEstadoUsuario') {
+      const item = (APP.catalogs?.estados || []).find(x => String(x.id) === String(data[k]));
+      val = esc(item?.nombre || data[k] || '');
+    } else {
+      const raw = data[k]?.String ?? data[k]?.Bool ?? data[k] ?? '';
+      val = esc(raw === true ? 'Sí' : raw === false ? 'No' : raw);
+    }
+    return `<div class="field ${k==='strImagen'?'field-full':''}">
+      <label>${esc(label)}</label><div class="detail-box">${val}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('detailModalTitle').textContent = `Detalle de ${schema.singleTitle}`;
+  document.getElementById('detailModalBody').innerHTML = `
+    <div class="detail-grid">${rows}</div>
+    <div class="modal-footer" style="padding:16px 0 0;border:none;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('detailModal')">Cerrar</button>
+      ${(perm().editar) ? `<button class="btn btn-warn" onclick="closeModal('detailModal');openForm(${id})">Editar</button>` : ''}
+    </div>`;
+  openModal('detailModal');
+}
+
+// ─── FORM ─────────────────────────────────────────────────────────────────
+async function openForm(id) {
+  APP.editingId = id;
+  const schema = SCHEMAS[APP.moduleKey];
+  await ensureCatalogs();
+  let data = {};
+  if (id) {
+    const d = await apiFetch('GET', `${schema.endpoint}/${id}`);
+    if (d.ok && d.data) data = d.data;
+  }
+  renderForm(schema, data, id);
+}
+
+function renderForm(schema, data, id) {
+  const title = id ? `Editar ${schema.singleTitle}` : `Agregar ${schema.singleTitle}`;
+  const fields = schema.form.map(f => renderField(f, data)).join('');
+
+  document.getElementById('moduleContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">${esc(title)}</div><div class="page-subtitle">Complete el formulario y presione Guardar.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <form id="entityForm">
+          <input type="hidden" name="id" value="${id || ''}">
+          <div class="form-grid">${fields}</div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" onclick="loadList(${APP.page})">Cancelar</button>
+            <button type="submit" class="btn btn-success">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+
+  document.getElementById('entityForm').onsubmit = saveRecord;
+}
+
+function renderField(field, data) {
+  const rawVal = data[field.name];
+  const strVal = rawVal?.String ?? rawVal ?? '';
+
+  if (field.type === 'checkbox') {
+    const checked = !!(rawVal?.Bool ?? rawVal);
+    return `<label class="field field-check">
+      <input type="checkbox" name="${esc(field.name)}" ${checked ? 'checked' : ''}>
+      <span>${esc(field.label)}</span>
+    </label>`;
+  }
+
+  if (field.type === 'select') {
+    const opts = (APP.catalogs?.[field.optionsKey] || [])
+      .map(opt => `<option value="${opt.id}" ${String(opt.id) === String(strVal) ? 'selected' : ''}>${esc(opt[field.textKey] || '')}</option>`)
+      .join('');
+    return `<div class="field">
+      <label>${esc(field.label)}</label>
+      <select name="${esc(field.name)}" ${field.required ? 'required' : ''}>
+        <option value="">Seleccione...</option>${opts}
+      </select>
+    </div>`;
+  }
+
+  if (field.type === 'file') {
+    const img = rawVal?.String ? `<div style="margin-top:10px"><img src="${esc(rawVal.String)}" alt="Foto" class="detail-image"></div>` : '';
+    return `<div class="field field-full">
+      <label>${esc(field.label)}</label>
+      <input type="file" name="${esc(field.name)}" accept="${esc(field.accept || '')}">
+      ${img}
+    </div>`;
+  }
+
+  if (field.name === 'strNumeroCelular') {
+    return `<div class="field">
+      <label>${esc(field.label)}</label>
+      <input type="text" name="${esc(field.name)}" maxlength="10" inputmode="numeric"
+        pattern="[0-9]{10}" value="${esc(strVal)}" ${field.required ? 'required' : ''}
+        oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)">
+    </div>`;
+  }
+
+  return `<div class="field">
+    <label>${esc(field.label)}</label>
+    <input type="${field.type}" name="${esc(field.name)}"
+      maxlength="${field.maxLength || ''}" value="${esc(strVal)}"
+      ${field.required ? 'required' : ''}
+      ${field.type === 'password' ? 'autocomplete="new-password"' : ''}>
+  </div>`;
+}
+
+// ─── SAVE ─────────────────────────────────────────────────────────────────
+async function saveRecord(e) {
+  e.preventDefault();
+  const schema = SCHEMAS[APP.moduleKey];
+  const id = e.target.querySelector('[name="id"]').value;
+  const hasFile = schema.form.some(f => f.type === 'file');
+
+  if (APP.moduleKey === 'usuario') {
+    const phone = (e.target.querySelector('[name="strNumeroCelular"]')?.value || '').trim();
+    if (!/^\d{10}$/.test(phone)) {
+      toast('El teléfono debe tener exactamente 10 dígitos.', 'error');
+      return;
+    }
+  }
+
+  let body, opts;
+  if (hasFile) {
+    body = new FormData(e.target);
+    body.delete('id');
+    schema.form.forEach(f => {
+      if (f.type === 'checkbox') body.set(f.name, body.get(f.name) ? 'true' : 'false');
+    });
+    opts = { method: id ? 'PUT' : 'POST', body };
+  } else {
+    const payload = {};
+    schema.form.forEach(f => {
+      const el = e.target.querySelector(`[name="${f.name}"]`);
+      if (!el) return;
+      payload[f.name] = f.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
+    });
+    opts = { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(payload).toString() };
+  }
+
+  const url = id ? `${schema.endpoint}/${id}` : schema.endpoint;
+  const r = await fetch(url, opts);
+  const d = await r.json();
+  if (!r.ok || !d.ok) { toast(d.message || 'No se pudo guardar', 'error'); return; }
+  APP.catalogs = null; // bust catalog cache
+  showStatus('¡Guardado!', id ? 'El registro se actualizó correctamente.' : 'El registro se creó correctamente.');
+  loadList(id ? APP.page : 1);
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────
+function deleteRecord(id) {
+  const schema = SCHEMAS[APP.moduleKey];
+  showConfirm('Confirmar eliminación', '¿Deseas eliminar este registro? Esta acción no se puede deshacer.', async () => {
+    const d = await apiFetch('DELETE', `${schema.endpoint}/${id}`);
+    closeModal('confirmModal');
+    if (!d.ok) { toast(d.message || 'No se pudo eliminar', 'error'); return; }
+    showStatus('Eliminado', 'El registro fue eliminado correctamente.');
+    loadList(APP.page);
+  });
+}
+
+// ─── PERMISOS PERFIL ──────────────────────────────────────────────────────
+async function renderPermisosPerfil() {
+  await ensureCatalogs();
+  const perfiles = (APP.catalogs?.perfiles || [])
+    .map(p => `<option value="${p.id}" ${String(p.id) === APP.permFilterPerfil ? 'selected' : ''}>${esc(p.nombre)}</option>`)
+    .join('');
+
+  document.getElementById('moduleContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Permisos por Perfil</div><div class="page-subtitle">Asignación de permisos de módulos a perfiles.</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-body">
+        <div class="field" style="max-width:280px">
+          <label>Seleccionar perfil</label>
+          <select id="selPermPerfil" onchange="APP.permFilterPerfil=this.value; loadPermRows(1)">
+            <option value="">— Seleccione —</option>${perfiles}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="permTable"></div>`;
+
+  if (APP.permFilterPerfil) loadPermRows(APP.page || 1);
+}
+
+async function loadPermRows(page = 1) {
+  APP.page = page;
+  const idPerfil = document.getElementById('selPermPerfil')?.value;
+  if (!idPerfil) { document.getElementById('permTable').innerHTML = ''; return; }
+
+  const d = await apiFetch('GET', `/api/permisos-perfil?idPerfil=${idPerfil}&page=${page}`);
+  if (!d.ok) { toast('Error cargando permisos', 'error'); return; }
+  APP.permRows = d.data || [];
+  APP.permTotalPages = d.totalPages || 1;
+  renderPermTable(APP.permRows, page, APP.permTotalPages);
+}
+
+function renderPermTable(rows, page, total) {
+  const p = perm();
+  const tbody = rows.length
+    ? rows.map((row, i) => {
+        const idx = (page-1)*5 + i + 1;
+        const bits = ['bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'];
+        const checks = bits.map(b =>
+          `<td><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''}></td>`
+        ).join('');
+        const saveBtn = p.editar ? `<button class="btn btn-success btn-sm" onclick="savePermRow(this,${row.id||0},${row.idPerfil},${row.idModulo})">Guardar</button>` : '';
+        const detailBtn = p.detalle ? `<button class="btn btn-accent btn-sm" onclick="viewPermDetail(${i})">Ver</button>` : '';
+        const delBtn = p.eliminar && row.id ? `<button class="btn btn-danger btn-sm" onclick="deletePermRow(${row.id})">Eliminar</button>` : '';
+        return `<tr>
+          <td>${idx}</td>
+          <td><strong>${esc(row.strNombreModulo)}</strong></td>
+          ${checks}
+          <td><div class="td-actions">${saveBtn}${detailBtn}${delBtn}</div></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Sin módulos</td></tr>`;
+
+  document.getElementById('permTable').innerHTML = `
+    <div class="card">
+      <div class="card-header"><span class="card-title">Módulos y permisos</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Módulo</th><th>Agregar</th><th>Editar</th><th>Consulta</th><th>Eliminar</th><th>Detalle</th><th>Acciones</th></tr></thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>
+      <div class="card-body" style="padding-top:0">
+        <div class="pagination">${renderPagination(page, total)}</div>
+      </div>
+    </div>`;
+}
+
+async function savePermRow(btn, rowId, idPerfil, idModulo) {
+  const tr = btn.closest('tr');
+  const body = {
+    idPerfil, idModulo,
+    bitAgregar:  tr.querySelector('[data-field="bitAgregar"]').checked  ? '1' : '0',
+    bitEditar:   tr.querySelector('[data-field="bitEditar"]').checked   ? '1' : '0',
+    bitConsulta: tr.querySelector('[data-field="bitConsulta"]').checked ? '1' : '0',
+    bitEliminar: tr.querySelector('[data-field="bitEliminar"]').checked ? '1' : '0',
+    bitDetalle:  tr.querySelector('[data-field="bitDetalle"]').checked  ? '1' : '0',
+  };
+  const url = `/api/permisos-perfil/${rowId || 0}`;
+  const method = rowId > 0 ? 'PUT' : 'POST';
+  const d = await apiFetch(method, url, body);
+  if (d.ok) showStatus('¡Guardado!', 'Permisos actualizados.');
+  else toast(d.message || 'Error', 'error');
+  loadPermRows(APP.page);
+}
+
+function viewPermDetail(idx) {
+  const row = APP.permRows[idx];
+  if (!row) return;
+  const schema = SCHEMAS.permisos_perfil;
+  const keys = ['strNombrePerfil','strNombreModulo','bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'];
+  const html = `<div class="detail-grid">
+    ${keys.map(k => `<div class="field">
+      <label>${esc(schema.detailLabels[k] || k)}</label>
+      <div class="detail-box">${k.startsWith('bit') ? boolLabel(!!row[k]) : esc(row[k] || '')}</div>
+    </div>`).join('')}
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-top:16px">
+    <button class="btn btn-ghost" onclick="closeModal('detailModal')">Cerrar</button>
+  </div>`;
+  document.getElementById('detailModalTitle').textContent = 'Detalle de permiso';
+  document.getElementById('detailModalBody').innerHTML = html;
+  openModal('detailModal');
+}
+
+function deletePermRow(id) {
+  showConfirm('Eliminar permiso', '¿Deseas eliminar este registro de permisos?', async () => {
+    const d = await apiFetch('DELETE', `/api/permisos-perfil/${id}`);
+    closeModal('confirmModal');
+    if (!d.ok) { toast(d.message || 'Error', 'error'); return; }
+    showStatus('Eliminado', 'El permiso fue eliminado.');
+    loadPermRows(APP.page);
+  });
+}
+
+// ─── GALLERY ─────────────────────────────────────────────────────────────
+function loadGallery() {
+  // Gallery is handled in loadList replacement when key === 'galeria'
+  renderGalleryView();
+}
+
+async function renderGalleryView() {
+  document.getElementById('moduleContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Galería de imágenes</div><div class="page-subtitle">Imágenes almacenadas en Cloudinary</div></div>
+      <label class="btn btn-success" style="cursor:pointer">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Subir imagen
+        <input type="file" id="imgUploadInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadGalleryImg(this)">
+      </label>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="gallery-grid" id="galleryGrid">
+          <div style="color:var(--muted);font-size:13px">Cargando imágenes…</div>
+        </div>
+      </div>
+    </div>`;
+
+  const imgs = await fetch('/images').then(r => r.json()).catch(() => []);
+  const grid = document.getElementById('galleryGrid');
+  if (!grid) return;
+  if (!imgs.length) { grid.innerHTML = '<div style="color:var(--muted);font-size:13px">No hay imágenes disponibles.</div>'; return; }
+  grid.innerHTML = imgs.map(url => `<div class="gallery-item"><img src="${esc(url)}" loading="lazy" alt="img"></div>`).join('');
+}
+
+async function uploadGalleryImg(input) {
+  const f = input.files[0]; if (!f) return;
+  const fd = new FormData(); fd.append('imagen', f);
+  toast('Subiendo imagen…', 'info');
+  const r = await fetch('/upload-image', { method: 'POST', body: fd });
+  const d = await r.json();
+  input.value = '';
+  if (d.ok) { toast('Imagen subida correctamente'); renderGalleryView(); }
+  else toast('Error al subir la imagen', 'error');
+}
+
+// ─── CATALOGS ────────────────────────────────────────────────────────────
+async function ensureCatalogs() {
+  if (APP.catalogs) return;
+  const d = await apiFetch('GET', '/api/catalogos/base');
+  if (d.ok) APP.catalogs = d;
+}
+
+// ─── CLOSE MODAL ON BACKDROP ─────────────────────────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+);
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────
+(function boot() {
+  if (INITIAL_MODULE && INITIAL_MODULE.moduleKey) {
+    activateModule(INITIAL_MODULE.moduleKey, INITIAL_MODULE.moduleName || INITIAL_MODULE.moduleKey);
+  } else {
+    activateModule('home', 'Dashboard');
+  }
+})();
+</script>
+</body>
+</html>
+{{end}}
