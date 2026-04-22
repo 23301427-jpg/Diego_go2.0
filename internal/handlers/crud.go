@@ -163,7 +163,7 @@ func GetPerfiles(w http.ResponseWriter, r *http.Request) {
 	if totalPages < 1 {
 		totalPages = 1
 	}
-	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages})
+	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages, "total": total})
 }
 
 func GetPerfilByID(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func GetModulos(w http.ResponseWriter, r *http.Request) {
 	if totalPages < 1 {
 		totalPages = 1
 	}
-	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages})
+	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages, "total": total})
 }
 
 func GetModuloByID(w http.ResponseWriter, r *http.Request) {
@@ -324,12 +324,13 @@ func DeleteModulo(w http.ResponseWriter, r *http.Request) {
 func GetPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 	page, limit, offset := parsePage(r)
 	idPerfil, _ := strconv.Atoi(r.URL.Query().Get("idPerfil"))
+	fetchAll := r.URL.Query().Get("all") == "true"
 
 	if idPerfil > 0 {
 		var total int
 		dbpkg.DB.QueryRow("SELECT COUNT(*) FROM Modulo").Scan(&total)
 
-		rows, err := dbpkg.DB.Query(fmt.Sprintf(`
+		baseQuery := `
 			SELECT ISNULL(pp.id,0), m.id, @p1, ISNULL(pp.bitAgregar,0), ISNULL(pp.bitEditar,0),
 				ISNULL(pp.bitConsulta,0), ISNULL(pp.bitEliminar,0), ISNULL(pp.bitDetalle,0),
 				p.strNombrePerfil, m.strNombreModulo
@@ -337,9 +338,16 @@ func GetPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 			CROSS JOIN Perfil p
 			LEFT JOIN PermisosPerfil pp ON pp.idModulo=m.id AND pp.idPerfil=p.id
 			WHERE p.id=@p1
-			ORDER BY m.id
-			OFFSET %d ROWS FETCH NEXT %d ROWS ONLY`, offset, limit),
-			sql.Named("p1", idPerfil))
+			ORDER BY m.id`
+
+		var fullQuery string
+		if fetchAll {
+			fullQuery = baseQuery
+		} else {
+			fullQuery = fmt.Sprintf("%s OFFSET %d ROWS FETCH NEXT %d ROWS ONLY", baseQuery, offset, limit)
+		}
+
+		rows, err := dbpkg.DB.Query(fullQuery, sql.Named("p1", idPerfil))
 		if err != nil {
 			WriteErr(w, 500, err.Error())
 			return
@@ -364,11 +372,15 @@ func GetPermisosPerfil(w http.ResponseWriter, r *http.Request) {
 			rows.Scan(&it.ID, &it.IDModulo, &it.IDPerfil, &it.BitAgregar, &it.BitEditar, &it.BitConsulta, &it.BitEliminar, &it.BitDetalle, &it.StrNombrePerfil, &it.StrNombreModulo)
 			data = append(data, it)
 		}
-		totalPages := int(math.Ceil(float64(total) / float64(limit)))
-		if totalPages < 1 {
-			totalPages = 1
+		if fetchAll {
+			WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": 1, "totalPages": 1, "total": len(data)})
+		} else {
+			totalPages := int(math.Ceil(float64(total) / float64(limit)))
+			if totalPages < 1 {
+				totalPages = 1
+			}
+			WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages, "total": total})
 		}
-		WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages})
 		return
 	}
 
@@ -494,7 +506,7 @@ func GetUsuarios(w http.ResponseWriter, r *http.Request) {
 	if totalPages < 1 {
 		totalPages = 1
 	}
-	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages})
+	WriteJSON(w, 200, map[string]interface{}{"ok": true, "data": data, "page": page, "totalPages": totalPages, "total": total})
 }
 
 func GetUsuarioByID(w http.ResponseWriter, r *http.Request) {

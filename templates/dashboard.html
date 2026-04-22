@@ -456,7 +456,6 @@ const SCHEMAS = {
     searchLabel: 'Buscar perfil',
     searchPlaceholder: 'Nombre del perfil...',
     columns: [
-      { key: 'id', label: 'ID' },
       { key: 'strNombrePerfil', label: 'Nombre' },
       { key: 'bitAdministrador', label: 'Administrador', render: v => v
         ? '<span class="badge badge-green">Sí</span>'
@@ -478,7 +477,6 @@ const SCHEMAS = {
     searchLabel: 'Buscar módulo',
     searchPlaceholder: 'Nombre del módulo...',
     columns: [
-      { key: 'id', label: 'ID' },
       { key: 'strNombreModulo', label: 'Nombre' },
       { key: 'strClaveModulo', label: 'Clave', render: v => `<code style="background:var(--bg);padding:2px 7px;border-radius:4px;font-size:12px">${esc(v)}</code>` },
       { key: 'strRuta', label: 'Ruta', render: v => `<code style="font-size:12px;color:var(--muted)">${esc(v)}</code>` },
@@ -515,7 +513,6 @@ const SCHEMAS = {
     searchLabel: 'Buscar usuario',
     searchPlaceholder: 'Nombre o correo...',
     columns: [
-      { key: 'id', label: 'ID' },
       { key: 'strNombreUsuario', label: 'Usuario' },
       { key: 'strCorreo', label: 'Correo' },
       { key: 'strNombrePerfil', label: 'Perfil' },
@@ -669,13 +666,17 @@ function perm() { return PERMISSIONS[APP.moduleKey] || {}; }
 // ─── HOME STATS ───────────────────────────────────────────────────────────
 async function loadHomeStats() {
   const [u, p, m, g] = await Promise.allSettled([
-    fetch('/api/usuarios?page=1').then(r => r.json()),
-    fetch('/api/perfiles?page=1').then(r => r.json()),
-    fetch('/api/modulos?page=1').then(r => r.json()),
+    fetch('/api/usuarios?page=1&limit=9999').then(r => r.json()),
+    fetch('/api/perfiles?page=1&limit=9999').then(r => r.json()),
+    fetch('/api/modulos?page=1&limit=9999').then(r => r.json()),
     fetch('/images').then(r => r.json()),
   ]);
   const totalOf = (res, fallback = '—') => {
-    if (res.status === 'fulfilled' && res.value.ok) return res.value.totalPages * 5;
+    if (res.status === 'fulfilled' && res.value.ok) {
+      if (typeof res.value.total === 'number') return res.value.total;
+      if (Array.isArray(res.value.data)) return res.value.data.length;
+      return res.value.totalPages * 5;
+    }
     return fallback;
   };
   document.getElementById('s-usuarios').textContent = totalOf(u);
@@ -1009,22 +1010,22 @@ async function renderPermisosPerfil() {
 }
 
 async function loadPermRows(page = 1) {
-  APP.page = page;
+  APP.page = 1;
   const idPerfil = document.getElementById('selPermPerfil')?.value;
   if (!idPerfil) { document.getElementById('permTable').innerHTML = ''; return; }
 
-  const d = await apiFetch('GET', `/api/permisos-perfil?idPerfil=${idPerfil}&page=${page}`);
+  const d = await apiFetch('GET', `/api/permisos-perfil?idPerfil=${idPerfil}&all=true`);
   if (!d.ok) { toast('Error cargando permisos', 'error'); return; }
   APP.permRows = d.data || [];
-  APP.permTotalPages = d.totalPages || 1;
-  renderPermTable(APP.permRows, page, APP.permTotalPages);
+  APP.permTotalPages = 1;
+  renderPermTable(APP.permRows);
 }
 
-function renderPermTable(rows, page, total) {
+function renderPermTable(rows) {
   const p = perm();
   const tbody = rows.length
     ? rows.map((row, i) => {
-        const idx = (page-1)*5 + i + 1;
+        const idx = i + 1;
         const bits = ['bitAgregar','bitEditar','bitConsulta','bitEliminar','bitDetalle'];
         const checks = bits.map(b =>
           `<td><input class="perm-check" type="checkbox" data-field="${b}" ${row[b] ? 'checked' : ''}></td>`
@@ -1043,15 +1044,12 @@ function renderPermTable(rows, page, total) {
 
   document.getElementById('permTable').innerHTML = `
     <div class="card">
-      <div class="card-header"><span class="card-title">Módulos y permisos</span></div>
+      <div class="card-header"><span class="card-title">Módulos y permisos — ${rows.length} módulo(s)</span></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>Módulo</th><th>Agregar</th><th>Editar</th><th>Consulta</th><th>Eliminar</th><th>Detalle</th><th>Acciones</th></tr></thead>
           <tbody>${tbody}</tbody>
         </table>
-      </div>
-      <div class="card-body" style="padding-top:0">
-        <div class="pagination">${renderPagination(page, total)}</div>
       </div>
     </div>`;
 }
@@ -1071,7 +1069,7 @@ async function savePermRow(btn, rowId, idPerfil, idModulo) {
   const d = await apiFetch(method, url, body);
   if (d.ok) showStatus('¡Guardado!', 'Permisos actualizados.');
   else toast(d.message || 'Error', 'error');
-  loadPermRows(APP.page);
+  loadPermRows();
 }
 
 function viewPermDetail(idx) {
@@ -1099,7 +1097,7 @@ function deletePermRow(id) {
     closeModal('confirmModal');
     if (!d.ok) { toast(d.message || 'Error', 'error'); return; }
     showStatus('Eliminado', 'El permiso fue eliminado.');
-    loadPermRows(APP.page);
+    loadPermRows();
   });
 }
 
