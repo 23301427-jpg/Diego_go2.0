@@ -135,6 +135,12 @@ func LoadPermsFromDB(idPerfil int) (map[string]*Permission, error) {
 func RequireModuleAccess(moduleKey, action string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Administradores tienen acceso total sin restricción
+			user := UserFromCtx(r)
+			if user != nil && user.Administrador {
+				next.ServeHTTP(w, r)
+				return
+			}
 			perm := PermsFromCtx(r)[moduleKey]
 			if perm == nil || !perm.Any {
 				denyRequest(w, r)

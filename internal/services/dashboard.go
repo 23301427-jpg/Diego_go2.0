@@ -33,9 +33,18 @@ type DashboardPayload struct {
 	User        UserInfo
 	Menus       []Menu
 	Permissions map[string]*mw.Permission
+	IsAdmin     bool
 }
 
 func GetDashboardPayload(idUsuario, idPerfil int, permissions map[string]*mw.Permission) (*DashboardPayload, error) {
+	return GetDashboardPayloadWithAdmin(idUsuario, idPerfil, permissions, false)
+}
+
+func GetDashboardPayloadAdmin(idUsuario, idPerfil int, permissions map[string]*mw.Permission) (*DashboardPayload, error) {
+	return GetDashboardPayloadWithAdmin(idUsuario, idPerfil, permissions, true)
+}
+
+func GetDashboardPayloadWithAdmin(idUsuario, idPerfil int, permissions map[string]*mw.Permission, isAdmin bool) (*DashboardPayload, error) {
 	rows, err := dbpkg.DB.Query(`
 		SELECT mn.id, mn.strNombreMenu, mn.intOrdenMenu,
 			m.id, m.strNombreModulo, m.strClaveModulo, m.strRuta,
@@ -62,7 +71,8 @@ func GetDashboardPayload(idUsuario, idPerfil int, permissions map[string]*mw.Per
 		if err := rows.Scan(&mnID, &mnNombre, &mnOrden, &mID, &mNombre, &mClave, &mRuta, &ag, &ed, &co, &el, &de); err != nil {
 			return nil, err
 		}
-		allowed := ag || ed || co || el || de
+		// Admin ve todos los módulos; otros usuarios solo los que tienen algún permiso
+		allowed := isAdmin || ag || ed || co || el || de
 		if _, ok := menuMap[mnID]; !ok {
 			menuMap[mnID] = &Menu{ID: mnID, Nombre: mnNombre}
 			menuOrder = append(menuOrder, mnID)

@@ -427,6 +427,7 @@
 <script>
 // ─── BOOTSTRAP DATA ───────────────────────────────────────────────────────
 const PERMISSIONS = {{toJSON .Permissions}};
+const IS_ADMIN = {{if .IsAdmin}}true{{else}}false{{end}};
 const INITIAL_MODULE = {{toJSON .InitialModule}};
 
 // ─── APP STATE ────────────────────────────────────────────────────────────
@@ -661,7 +662,10 @@ async function apiFetch(method, url, body = null) {
   return r.json();
 }
 
-function perm() { return PERMISSIONS[APP.moduleKey] || {}; }
+function perm() {
+  if (IS_ADMIN) return { agregar: true, editar: true, consulta: true, eliminar: true, detalle: true, any: true };
+  return PERMISSIONS[APP.moduleKey] || {};
+}
 
 // ─── HOME STATS ───────────────────────────────────────────────────────────
 async function loadHomeStats() {

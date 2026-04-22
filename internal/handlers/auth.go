@@ -95,7 +95,7 @@ func GetDashboard(tmpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := mw.UserFromCtx(r)
 		perms := mw.PermsFromCtx(r)
-		payload, err := services.GetDashboardPayload(user.IDUsuario, user.IDPerfil, perms)
+		payload, err := services.GetDashboardPayloadWithAdmin(user.IDUsuario, user.IDPerfil, perms, user.Administrador)
 		if err != nil {
 			http.Error(w, "Error cargando dashboard: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -103,8 +103,9 @@ func GetDashboard(tmpl *template.Template) http.HandlerFunc {
 		tmpl.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
 			"User":          payload.User,
 			"Menus":         payload.Menus,
-			"Permissions":   permsToMap(perms),
+			"Permissions":   permsToMapAdmin(perms, user.Administrador),
 			"InitialModule": nil,
+			"IsAdmin":       user.Administrador,
 		})
 	}
 }
@@ -113,7 +114,7 @@ func GetStaticModule(tmpl *template.Template, menuName, moduleKey, moduleName st
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := mw.UserFromCtx(r)
 		perms := mw.PermsFromCtx(r)
-		payload, err := services.GetDashboardPayload(user.IDUsuario, user.IDPerfil, perms)
+		payload, err := services.GetDashboardPayloadWithAdmin(user.IDUsuario, user.IDPerfil, perms, user.Administrador)
 		if err != nil {
 			http.Error(w, "Error cargando módulo: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -121,7 +122,8 @@ func GetStaticModule(tmpl *template.Template, menuName, moduleKey, moduleName st
 		tmpl.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
 			"User":        payload.User,
 			"Menus":       payload.Menus,
-			"Permissions": permsToMap(perms),
+			"Permissions": permsToMapAdmin(perms, user.Administrador),
+			"IsAdmin":     user.Administrador,
 			"InitialModule": map[string]string{
 				"menuName":   menuName,
 				"moduleKey":  moduleKey,
@@ -135,7 +137,7 @@ func GetSeguridadView(tmpl *template.Template, viewName, menuName, moduleKey, mo
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := mw.UserFromCtx(r)
 		perms := mw.PermsFromCtx(r)
-		payload, err := services.GetDashboardPayload(user.IDUsuario, user.IDPerfil, perms)
+		payload, err := services.GetDashboardPayloadWithAdmin(user.IDUsuario, user.IDPerfil, perms, user.Administrador)
 		if err != nil {
 			http.Error(w, "Error cargando vista: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -143,7 +145,8 @@ func GetSeguridadView(tmpl *template.Template, viewName, menuName, moduleKey, mo
 		tmpl.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
 			"User":        payload.User,
 			"Menus":       payload.Menus,
-			"Permissions": permsToMap(perms),
+			"Permissions": permsToMapAdmin(perms, user.Administrador),
+			"IsAdmin":     user.Administrador,
 			"InitialModule": map[string]string{
 				"menuName":   menuName,
 				"moduleKey":  moduleKey,
@@ -183,18 +186,37 @@ func verifyCaptcha(response string) bool {
 }
 
 func permsToMap(perms map[string]*mw.Permission) map[string]interface{} {
+	return permsToMapAdmin(perms, false)
+}
+
+func permsToMapAdmin(perms map[string]*mw.Permission, isAdmin bool) map[string]interface{} {
 	out := make(map[string]interface{})
 	for k, p := range perms {
-		out[k] = map[string]interface{}{
-			"idModulo": p.IDModulo,
-			"nombre":   p.Nombre,
-			"ruta":     p.Ruta,
-			"agregar":  p.Agregar,
-			"editar":   p.Editar,
-			"consulta": p.Consulta,
-			"eliminar": p.Eliminar,
-			"detalle":  p.Detalle,
-			"any":      p.Any,
+		if isAdmin {
+			// Admin tiene todos los permisos habilitados
+			out[k] = map[string]interface{}{
+				"idModulo": p.IDModulo,
+				"nombre":   p.Nombre,
+				"ruta":     p.Ruta,
+				"agregar":  true,
+				"editar":   true,
+				"consulta": true,
+				"eliminar": true,
+				"detalle":  true,
+				"any":      true,
+			}
+		} else {
+			out[k] = map[string]interface{}{
+				"idModulo": p.IDModulo,
+				"nombre":   p.Nombre,
+				"ruta":     p.Ruta,
+				"agregar":  p.Agregar,
+				"editar":   p.Editar,
+				"consulta": p.Consulta,
+				"eliminar": p.Eliminar,
+				"detalle":  p.Detalle,
+				"any":      p.Any,
+			}
 		}
 	}
 	return out
