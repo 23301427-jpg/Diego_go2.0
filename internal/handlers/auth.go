@@ -16,8 +16,8 @@ import (
 	"github.com/23301427-jpg/Diego_go2.0/internal/services"
 )
 
-var recaptchaSecret = getEnvOr("RECAPTCHA_SECRET", "6LebTlYsAAAAAD0Q3XM3e6ah7CctvUEK4OEclWDR")
-var recaptchaSite = getEnvOr("RECAPTCHA_SITE", "6LebTlYsAAAAADnLSamRI9p-VJYYovtlyxHeRD-8")
+var recaptchaSecret = getEnvOr("RECAPTCHA_SECRET", "6Lf-68QsAAAAAOCpEeLlDefj4X7d8nbNHUIpMg3R")
+var recaptchaSite = getEnvOr("RECAPTCHA_SITE", "6Lf-68QsAAAAAHt7_MxjjVVbEO8SPFgi-Xk6QmVw")
 
 func GetLogin(tmpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
